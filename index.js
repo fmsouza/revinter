@@ -9,16 +9,22 @@ module.exports = function(str, pattern) {
         if (intersection.length>0) intersections.push(intersection);
         position += (key.length + intersection.length);
     }
+    let lastIntersection = pattern.slice(position, pattern.length);
+    if (lastIntersection.length>0) intersections.push(lastIntersection);
 
     let text = str;
     let response = {};
     let pieceIndex = 0;
-    for (let intersecion of intersections) {
-        let tmp = text.split(intersecion);
+    for (let intersection of intersections) {
+        let tmp = text.split(intersection);
         let tag = keys[pieceIndex].match(/.*\$\{(.*)\}.*/)[1]; // [ '${action}', 'action', index: 0, input: '${action}' ]
-        response[tag] = tmp[0];
-        text = tmp[1];
-        pieceIndex++;
+        if (tmp[0].length>0) {
+            response[tag] = tmp[0];
+            text = tmp[1];
+            pieceIndex++;
+        } else {
+            text = tmp[1];
+        }
     }
 
     if (text){
