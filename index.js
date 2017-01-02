@@ -1,35 +1,51 @@
-module.exports = function(str, pattern) {
-    const keys = pattern.match(/\$\{(.*?)\}/gi);
+module.exports = function (str, pattern) {
 
-    const intersections = [];
-    let position = 0;
+  let position = 0
+  let text = str
+  let pieceIndex = 0
 
-    for (let key of keys) {
-        let intersection = pattern.slice(position, pattern.indexOf(key));
-        if (intersection.length>0) intersections.push(intersection);
-        position += (key.length + intersection.length);
+  const keys = pattern.match(/\$\{(.*?)\}/gi)
+  const filterUndef = (el) => 
+    (el != undefined) 
+      ? el 
+      : false
+  const mapIntersections = (key, i) => {
+    let intersection = pattern.slice(position, pattern.indexOf(key))
+    if (pattern.indexOf(key) > -1){ 
+      position += (key.length + intersection.length)
+      return intersection
     }
-    let lastIntersection = pattern.slice(position, pattern.length);
-    if (lastIntersection.length>0) intersections.push(lastIntersection);
+  }
+  const reduzLast = (acc, pattern) => {
+    let lastIntersection = pattern.slice(position, pattern.length)
+    if (lastIntersection.length) acc.push(lastIntersection)
+    return acc
+  }
 
-    let text = str;
-    let response = {};
-    let pieceIndex = 0;
-    for (let intersection of intersections) {
-        let tmp = text.split(intersection);
-        let tag = keys[pieceIndex].match(/.*\$\{(.*)\}.*/)[1]; // [ '${action}', 'action', index: 0, input: '${action}' ]
-        if (tmp[0].length>0) {
-            response[tag] = tmp[0];
-            text = tmp[1];
-            pieceIndex++;
-        } else {
-            text = tmp[1];
-        }
-    }
+  const intersections = keys.map(mapIntersections).filter(filterUndef)
+  const intersectionsTotal = [pattern].reduce(reduzLast, intersections)
 
-    if (text){
-        let tag = keys[pieceIndex].match(/.*\$\{(.*)\}.*/)[1]; // [ '${action}', 'action', index: 0, input: '${action}' ]
-        response[tag] = text;
+  const reduceToResponse = (acc, intersection) => {
+    if (text != undefined) {
+      let tmp = text.split(intersection)
+      let tag = keys[pieceIndex].match(/.*\$\{(.*)\}.*/)[1] // [ '${action}', 'action', index: 0, input: '${action}' ]
+   
+      const success = () => { 
+        pieceIndex++
+        acc[tag] = tmp[0]
+       }   
+
+      text = tmp[1]
+
+      if (tmp[0].length) success()
+      return acc
     }
-    return response;
+  }
+  
+  const response = intersectionsTotal.reduce(reduceToResponse, {})
+  if (text) {
+    let tag = keys[pieceIndex].match(/.*\$\{(.*)\}.*/)[1] // [ '${action}', 'action', index: 0, input: '${action}' ]
+    response[tag] = text
+  }
+  return response
 }
