@@ -1,6 +1,6 @@
 {
   "name": "revinter",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Reversal interpolation on a string based on a pattern to recover tokens",
   "main": "index.js",
   "scripts": {
